@@ -1,4 +1,5 @@
 from numpy import *
+from numpy import linalg as la
 import matplotlib.pyplot as plt
 class Pendel:
     def __init__(self, fig, ax):
@@ -16,14 +17,27 @@ class Pendel:
         self.ylim = (0, 12)
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
+
+        #Pendel Value
+        self.points = array([])
+        self.l1 = 0
+        self.l2 = 0
+        self.theta1 = 0
+        self.theta2 = 0
+        self.m1 = 1
+        self.m2 = 1
+        self.gravity = 9.8
+
         plt.show()  # draw empty subplot with axes
 
     def ButtonPress(self, event):  # mouse button pressed event
         # print( event.xdata, event.ydata)
         if event.button == 1:  # add new point
-            self.px = r_[self.px, event.xdata]
-            self.py = r_[self.py, event.ydata]
-
+            if self.px.size < 3:
+                self.px = r_[self.px, event.xdata]
+                self.py = r_[self.py, event.ydata]
+                if self.px.size == 3:
+                    self.calcLength()
         elif event.button == 3:  # move closest point
             if size(self.px) > 0:
                 dist2 = (self.px - event.xdata) ** 2 + (self.py - event.ydata) ** 2
@@ -51,6 +65,32 @@ class Pendel:
 
         event.canvas.draw()
         # using plt.show() here will cause stack overflow
+    def calcPoints(self):
+        p1 = c_[self.px[0], self.py[0]]
+        p2 = c_[self.px[1], self.py[1]]
+        p3 = c_[self.px[2], self.py[2]]
+
+        self.points = r_[p1,p2,p3]
+
+        return p1,p2,p3
+
+    def calcLength(self):
+        if self.px.size < 3:
+            return
+
+        self.calcPoints()
+        self.calcangle()
+
+        self.l1 = la.norm(self.points[0]-self.points[1])
+        self.l2 = la.norm(self.points[1]-self.points[2])
+
+        return self.l1, self.l2
+
+    def calcangle(self):
+        if self.px.size < 3:
+            return
+        self.theta1 = arctan2(self.py[1] - self.py[0], self.px[1] - self.px[0])
+        self.theta2 = arctan2(self.py[2] - self.py[1], self.px[2] - self.px[1])
 
 
 
