@@ -1,6 +1,7 @@
 from numpy import *
 from numpy import linalg as la
 import matplotlib.pyplot as plt
+import sympy as smp
 class Pendel:
     def __init__(self, fig, ax):
         self.ax = ax
