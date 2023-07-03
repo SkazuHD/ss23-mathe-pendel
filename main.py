@@ -1,3 +1,4 @@
+from matplotlib import animation
 from numpy import *
 from numpy import linalg as la
 import matplotlib.pyplot as plt
