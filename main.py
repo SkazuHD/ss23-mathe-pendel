@@ -135,8 +135,12 @@ class Pendel:
         if self.px.size < 3:
              return
 
-        l1 = la.norm(self.px[0] - self.px[1])
-        l2 = la.norm(self.px[2] - self.px[1])
+        dx = self.px[0] - self.px[1]
+        dy = self.py[0] - self.py[1]
+        dx2 = self.px[2] - self.px[1]
+        dy2 = self.py[2] - self.py[1]
+        l1 = sqrt(dx**2 + dy**2)
+        l2 = sqrt(dx2**2 + dy2**2)
 
         return l1, l2
 
@@ -150,7 +154,7 @@ class Pendel:
 
 
     def start(self):
-        t = linspace(0, 40, 10001)
+        t = linspace(0, 40, 1001)
         g = 9.81
         # TODO WAY TO CHANGE MASS IN PLOT
         m1 = 1
@@ -166,11 +170,12 @@ class Pendel:
 
         #TODO HOW TO CALCULATE STARTING VELOCITY
         #Starting velocity
-        y0_theta1_v = 3
-        y0_theta2_v = -1
-        print(self.dthe1dt_f(y0_theta1_v), self.dthe2dt_f(y0_theta2_v))
+        y0_theta1_v, y0_theta2_v = self.calculate_angular_velocity(L1, L2, m1, m2, y0_theta1, y0_theta2, g)
+
         print(L1, L2)
         print(y0_theta1, y0_theta2, y0_theta1_v, y0_theta2_v)
+
+
         self.ans = odeint(self.dSdt, y0=[y0_theta1, y0_theta1_v, y0_theta2, y0_theta2_v], t=t, args=(g, m1, m2, L1, L2))
         self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
         #TODO SHOW IN SAME PLOT
@@ -181,10 +186,41 @@ class Pendel:
         self.ln1, = plt.plot([], [], 'ro--', lw=3, markersize=8)
         ax.set_ylim(-(L1+L2), (L1+L2))
         ax.set_xlim(-(L1+L2), (L1+L2))
-        self.ax.ani = animation.FuncAnimation(fig, self.animate, frames=10000, interval=3)
+        self.ax.ani = animation.FuncAnimation(fig, self.animate, frames=1000, interval=20)
         # ani.save('pen.gif', writer='pillow', fps=25)
         plt.show()
 
+    def calculate_angular_velocity(self, l1, l2, m1, m2, theta1, theta2, g):
+        #TODO VERIFY CHATGPTS ANSWER
+        t = smp.symbols('t')
+
+        # Define the variables for angular velocities
+        omega1 = smp.Function('omega1')(t)
+        omega2 = smp.Function('omega2')(t)
+
+        # Calculate the angular accelerations
+        omega1_dot = smp.diff(omega1, t)
+        omega2_dot = smp.diff(omega2, t)
+
+        # Define the equations of motion for the double pendulum
+        eq1 = l1 * omega1_dot + g * smp.sin(theta1)
+        eq2 = l2 * omega2_dot + g * smp.sin(theta2)
+
+        # Solve the equations to obtain the angular velocities
+        velocities = smp.solve((eq1, eq2), (omega1_dot, omega2_dot), dict=True)
+
+        # Extract the angular velocities from the solution
+        omega1_val = velocities[0][omega1_dot]
+        omega2_val = velocities[0][omega2_dot]
+
+        # Substitute the given values into the angular velocities
+        omega1_val = omega1_val.subs(
+            [(l1, l1), (l2, l2), (m1, m1), (m2, m2), (g, g), (theta1, theta1), (theta2, theta2)])
+        omega2_val = omega2_val.subs(
+            [(l1, l1), (l2, l2), (m1, m1), (m2, m2), (g, g), (theta1, theta1), (theta2, theta2)])
+
+        print(omega1_val, omega2_val)
+        return omega1_val, omega2_val
 
 
 if __name__ == '__main__':
