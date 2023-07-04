@@ -11,6 +11,7 @@ class Pendel:
         self.px = array([])  # x coordinates for control polygon
         self.py = array([])  # y coordinates
         self.nDrag = -1
+        self.figure1 = fig
 
         self.canvas.mpl_connect('button_press_event', self.ButtonPress)
         self.canvas.mpl_connect('motion_notify_event', self.Move)
@@ -57,7 +58,9 @@ class Pendel:
         # Lagrangian
         self.L = T - V
 
+        #First Euler Lagrange Equation
         LE1 = smp.diff(self.L, self.the1) - smp.diff(smp.diff(self.L, self.the1_d), self.t).simplify()
+        #Second Euler Lagrange Equation
         LE2 = smp.diff(self.L, self.the2) - smp.diff(smp.diff(self.L, self.the2_d), self.t).simplify()
 
         self.sols = smp.solve([LE1, LE2], (self.the1_dd, self.the2_dd),
@@ -68,24 +71,7 @@ class Pendel:
         self.dthe1dt_f = smp.lambdify(self.the1_d, self.the1_d)
         self.dthe2dt_f = smp.lambdify(self.the2_d, self.the2_d)
 
-        t = linspace(0, 40, 1001)
-        g = 9.81
-        m1 = 2
-        m2 = 1
-        L1 = 2
-        L2 = 1
-        #TODO y0 = Startwerte einsetzen
-        self.ans = odeint(self.dSdt, y0=[1, -3, -1, 5], t=t, args=(g, m1, m2, L1, L2))
-        self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        ax.set_facecolor('k')
-        ax.get_xaxis().set_ticks([])  # enable this to hide x axis ticks
-        ax.get_yaxis().set_ticks([])  # enable this to hide y axis ticks
-        self.ln1, = plt.plot([], [], 'ro--', lw=3, markersize=8)
-        ax.set_ylim(-4, 4)
-        ax.set_xlim(-4, 4)
-        self.ani = animation.FuncAnimation(fig, self.animate, frames=1000, interval=50)
-        #ani.save('pen.gif', writer='pillow', fps=25)
+
 
         plt.show()  # draw empty subplot with axes
 
@@ -109,17 +95,15 @@ class Pendel:
     def animate(self, i):
         self.ln1.set_data([0, self.x1[i], self.x2[i]], [0, self.y1[i], self.y2[i]])
 
-
-
-
     def ButtonPress(self, event):  # mouse button pressed event
         # print( event.xdata, event.ydata)
         if event.button == 1:  # add new point
             if self.px.size < 3:
                 self.px = r_[self.px, event.xdata]
                 self.py = r_[self.py, event.ydata]
-                #if self.px.size == 3:
-                    #self.calcLength()
+                if self.px.size == 3:
+                    print("3 points selected")
+                    self.start()
         elif event.button == 3:  # move closest point
             if size(self.px) > 0:
                 dist2 = (self.px - event.xdata) ** 2 + (self.py - event.ydata) ** 2
@@ -147,34 +131,59 @@ class Pendel:
 
         event.canvas.draw()
         # using plt.show() here will cause stack overflow
-    # def calcPoints(self):
-    #     p1 = c_[self.px[0], self.py[0]]
-    #     p2 = c_[self.px[1], self.py[1]]
-    #     p3 = c_[self.px[2], self.py[2]]
-    #
-    #     self.points = r_[p1,p2,p3]
-    #
-    #     return p1,p2,p3
+    def calcLength(self):
+        if self.px.size < 3:
+             return
 
-    # def calcLength(self):
-    #     if self.px.size < 3:
-    #         return
-    #
-    #     self.calcPoints()
-    #     self.calcangle()
-    #
-    #     self.l1 = la.norm(self.points[0]-self.points[1])
-    #     self.l2 = la.norm(self.points[1]-self.points[2])
-    #
-    #     return self.l1, self.l2
+        l1 = la.norm(self.px[0] - self.px[1])
+        l2 = la.norm(self.px[2] - self.px[1])
 
-   # def calcangle(self):
-        #if self.px.size < 3:
-        #    return
-        #self.theta1 = arctan2(self.py[1] - self.py[0], self.px[1] - self.px[0])
-        #self.theta2 = arctan2(self.py[2] - self.py[1], self.px[2] - self.px[1])
+        return l1, l2
+
+    def calcangle(self):
+        if self.px.size < 3:
+           return
+        theta1 = arctan2(self.py[1] - self.py[0], self.px[1] - self.px[0])
+        theta2 = arctan2(self.py[2] - self.py[1], self.px[2] - self.px[1])
+
+        return theta1, theta2
 
 
+    def start(self):
+        t = linspace(0, 40, 10001)
+        g = 9.81
+        # TODO WAY TO CHANGE MASS IN PLOT
+        m1 = 1
+        m2 = 1
+        L1, L2 = self.calcLength()
+        #Starting angle
+        y0_theta1 = self.calcangle()[0]
+        y0_theta2 = self.calcangle()[1]
+
+        #Test values
+        #L1 , L2 = 3,1
+        #y0_theta1, y0_theta2 = 3, 0.5
+
+        #TODO HOW TO CALCULATE STARTING VELOCITY
+        #Starting velocity
+        y0_theta1_v = 3
+        y0_theta2_v = -1
+        print(self.dthe1dt_f(y0_theta1_v), self.dthe2dt_f(y0_theta2_v))
+        print(L1, L2)
+        print(y0_theta1, y0_theta2, y0_theta1_v, y0_theta2_v)
+        self.ans = odeint(self.dSdt, y0=[y0_theta1, y0_theta1_v, y0_theta2, y0_theta2_v], t=t, args=(g, m1, m2, L1, L2))
+        self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
+        #TODO SHOW IN SAME PLOT
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        ax.set_facecolor('w')
+        ax.get_xaxis().set_ticks([])  # enable this to hide x axis ticks
+        ax.get_yaxis().set_ticks([])  # enable this to hide y axis ticks
+        self.ln1, = plt.plot([], [], 'ro--', lw=3, markersize=8)
+        ax.set_ylim(-(L1+L2), (L1+L2))
+        ax.set_xlim(-(L1+L2), (L1+L2))
+        self.ax.ani = animation.FuncAnimation(fig, self.animate, frames=10000, interval=3)
+        # ani.save('pen.gif', writer='pillow', fps=25)
+        plt.show()
 
 
 
