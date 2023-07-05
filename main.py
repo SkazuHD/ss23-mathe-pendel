@@ -4,6 +4,8 @@ from numpy import linalg as la
 import matplotlib.pyplot as plt
 import sympy as smp
 from scipy.integrate import odeint
+
+
 class Pendel:
     def __init__(self, fig, ax):
         self.ax = ax
@@ -22,10 +24,10 @@ class Pendel:
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
 
-        #Pendel Value
+        # Pendel Value
         self.points = array([])
 
-        #Sympy Stuff
+        # Sympy Stuff
         self.L1 = smp.symbols('L1')
         self.L2 = smp.symbols('L2')
         self.m1 = smp.symbols('m1')
@@ -58,20 +60,22 @@ class Pendel:
         # Lagrangian
         self.L = T - V
 
-        #First Euler Lagrange Equation
+        # First Euler Lagrange Equation
         LE1 = smp.diff(self.L, self.the1) - smp.diff(smp.diff(self.L, self.the1_d), self.t).simplify()
-        #Second Euler Lagrange Equation
+        # Second Euler Lagrange Equation
         LE2 = smp.diff(self.L, self.the2) - smp.diff(smp.diff(self.L, self.the2_d), self.t).simplify()
 
         self.sols = smp.solve([LE1, LE2], (self.the1_dd, self.the2_dd),
-                         simplify=False, rational=False)
+                              simplify=False, rational=False)
 
-        self.dz1dt_f = smp.lambdify((self.t, self.g, self.m1, self.m2, self.L1, self.L2, self.the1, self.the2, self.the1_d, self.the2_d), self.sols[self.the1_dd])
-        self.dz2dt_f = smp.lambdify((self.t, self.g, self.m1,self.m2, self.L1, self.L2, self.the1, self.the2, self.the1_d, self.the2_d), self.sols[self.the2_dd])
+        self.dz1dt_f = smp.lambdify(
+            (self.t, self.g, self.m1, self.m2, self.L1, self.L2, self.the1, self.the2, self.the1_d, self.the2_d),
+            self.sols[self.the1_dd])
+        self.dz2dt_f = smp.lambdify(
+            (self.t, self.g, self.m1, self.m2, self.L1, self.L2, self.the1, self.the2, self.the1_d, self.the2_d),
+            self.sols[self.the2_dd])
         self.dthe1dt_f = smp.lambdify(self.the1_d, self.the1_d)
         self.dthe2dt_f = smp.lambdify(self.the2_d, self.the2_d)
-
-
 
         plt.show()  # draw empty subplot with axes
 
@@ -80,7 +84,6 @@ class Pendel:
                 -L1 * cos(the1),
                 L1 * sin(the1) + L2 * sin(the2),
                 -L1 * cos(the1) - L2 * cos(the2))
-
 
     def dSdt(self, S, t, g, m1, m2, L1, L2):
         the1, z1, the2, z2 = S
@@ -131,67 +134,67 @@ class Pendel:
 
         event.canvas.draw()
         # using plt.show() here will cause stack overflow
+
     def calcLength(self):
         if self.px.size < 3:
-             return
+            return
 
         dx = self.px[0] - self.px[1]
         dy = self.py[0] - self.py[1]
         dx2 = self.px[2] - self.px[1]
         dy2 = self.py[2] - self.py[1]
-        l1 = sqrt(dx**2 + dy**2)
-        l2 = sqrt(dx2**2 + dy2**2)
+        l1 = sqrt(dx ** 2 + dy ** 2)
+        l2 = sqrt(dx2 ** 2 + dy2 ** 2)
 
         return l1, l2
 
     def calcangle(self):
         if self.px.size < 3:
-           return
+            return
         theta1 = arctan2(self.py[1] - self.py[0], self.px[1] - self.px[0])
         theta2 = arctan2(self.py[2] - self.py[1], self.px[2] - self.px[1])
 
         return theta1, theta2
 
-
     def start(self):
+        plt.close(self.figure1)
         t = linspace(0, 40, 1001)
         g = 9.81
         # TODO WAY TO CHANGE MASS IN PLOT
         m1 = 1
         m2 = 1
         L1, L2 = self.calcLength()
-        #Starting angle
+        # Starting angle
         y0_theta1 = self.calcangle()[0]
         y0_theta2 = self.calcangle()[1]
 
-        #Test values
-        #L1 , L2 = 3,1
-        #y0_theta1, y0_theta2 = 3, 0.5
+        # Test values
+        # L1 , L2 = 3,1
+        # y0_theta1, y0_theta2 = 3, 0.5
 
-        #TODO HOW TO CALCULATE STARTING VELOCITY
-        #Starting velocity
+        # TODO HOW TO CALCULATE STARTING VELOCITY
+        # Starting velocity
         y0_theta1_v, y0_theta2_v = self.calculate_angular_velocity(L1, L2, m1, m2, y0_theta1, y0_theta2, g)
 
         print(L1, L2)
         print(y0_theta1, y0_theta2, y0_theta1_v, y0_theta2_v)
 
-
         self.ans = odeint(self.dSdt, y0=[y0_theta1, y0_theta1_v, y0_theta2, y0_theta2_v], t=t, args=(g, m1, m2, L1, L2))
         self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
-        #TODO SHOW IN SAME PLOT
+        # TODO SHOW IN SAME PLOT
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
         ax.set_facecolor('w')
         ax.get_xaxis().set_ticks([])  # enable this to hide x axis ticks
         ax.get_yaxis().set_ticks([])  # enable this to hide y axis ticks
         self.ln1, = plt.plot([], [], 'ro--', lw=3, markersize=8)
-        ax.set_ylim(-(L1+L2), (L1+L2))
-        ax.set_xlim(-(L1+L2), (L1+L2))
+        ax.set_ylim(-(L1 + L2), (L1 + L2))
+        ax.set_xlim(-(L1 + L2), (L1 + L2))
         self.ax.ani = animation.FuncAnimation(fig, self.animate, frames=1000, interval=20)
         # ani.save('pen.gif', writer='pillow', fps=25)
         plt.show()
 
     def calculate_angular_velocity(self, l1, l2, m1, m2, theta1, theta2, g):
-        #TODO VERIFY
+        # TODO VERIFY
         t = smp.symbols('t')
 
         # Define the variables for angular velocities
