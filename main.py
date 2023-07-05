@@ -191,7 +191,7 @@ class Pendel:
         plt.show()
 
     def calculate_angular_velocity(self, l1, l2, m1, m2, theta1, theta2, g):
-        #TODO VERIFY CHATGPTS ANSWER
+        #TODO VERIFY
         t = smp.symbols('t')
 
         # Define the variables for angular velocities
