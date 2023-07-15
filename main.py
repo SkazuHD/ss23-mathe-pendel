@@ -4,6 +4,8 @@ from numpy import linalg as la
 import matplotlib.pyplot as plt
 import sympy as smp
 from scipy.integrate import odeint
+from celluloid import Camera
+
 
 
 class Pendel:
@@ -14,7 +16,7 @@ class Pendel:
         self.py = array([])  # y coordinates
         self.nDrag = -1
         self.figure1 = fig
-
+        self.running = False
         self.canvas.mpl_connect('button_press_event', self.ButtonPress)
         self.canvas.mpl_connect('motion_notify_event', self.Move)
         self.canvas.mpl_connect('button_release_event', self.Release)
@@ -106,8 +108,13 @@ class Pendel:
                 self.py = r_[self.py, event.ydata]
                 if self.px.size == 3:
                     print("3 points selected")
+                    if self.running:
+                        return
+                    self.running = True
                     self.start()
         elif event.button == 3:  # move closest point
+            if self.running:
+                return
             if size(self.px) > 0:
                 dist2 = (self.px - event.xdata) ** 2 + (self.py - event.ydata) ** 2
                 self.nDrag = argmin(dist2)
@@ -157,8 +164,9 @@ class Pendel:
         return theta1, theta2
 
     def start(self):
-        plt.close(self.figure1)
-        t = linspace(0, 40, 1001)
+
+        # plt.close(self.figure1)
+        t = linspace(0, 80, 2001)
         g = 9.81
         # TODO WAY TO CHANGE MASS IN PLOT
         m1 = 1
@@ -176,22 +184,31 @@ class Pendel:
         # Starting velocity
         y0_theta1_v, y0_theta2_v = self.calculate_angular_velocity(L1, L2, m1, m2, y0_theta1, y0_theta2, g)
 
-        print(L1, L2)
-        print(y0_theta1, y0_theta2, y0_theta1_v, y0_theta2_v)
-
         self.ans = odeint(self.dSdt, y0=[y0_theta1, y0_theta1_v, y0_theta2, y0_theta2_v], t=t, args=(g, m1, m2, L1, L2))
         self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
         # TODO SHOW IN SAME PLOT
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-        ax.set_facecolor('w')
-        ax.get_xaxis().set_ticks([])  # enable this to hide x axis ticks
-        ax.get_yaxis().set_ticks([])  # enable this to hide y axis ticks
-        self.ln1, = plt.plot([], [], 'ro--', lw=3, markersize=8)
-        ax.set_ylim(-(L1 + L2), (L1 + L2))
-        ax.set_xlim(-(L1 + L2), (L1 + L2))
-        self.ax.ani = animation.FuncAnimation(fig, self.animate, frames=1000, interval=20)
-        # ani.save('pen.gif', writer='pillow', fps=25)
-        plt.show()
+        #fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        #self.ax.set_facecolor('b')
+        self.ax.get_xaxis().set_ticks([])  # enable this to hide x axis ticks
+        self.ax.get_yaxis().set_ticks([])  # enable this to hide y axis ticks
+        plt.ion()
+        plt.cla()
+        self.ln1, = self.ax.plot([], [], 'ro--', lw=3, markersize=8)
+        self.ax.set_ylim(-(L1 + L2), (L1 + L2))
+        self.ax.set_xlim(-(L1 + L2), (L1 + L2))
+        self.px = []
+        self.py = []
+
+        camera = Camera(self.figure1)
+        for i in range(self.x1.size):
+            self.animate(i)
+            self.figure1.canvas.draw()
+            self.figure1.canvas.flush_events()
+            camera.snap()
+        self.ln1.set_animated(False)
+    # self.ax.ani = animation.FuncAnimation(self.figure1, self.animate, frames=1000, interval=20)
+
+    # plt.show()
 
     def calculate_angular_velocity(self, l1, l2, m1, m2, theta1, theta2, g):
         # TODO VERIFY
