@@ -123,6 +123,8 @@ class Pendel:
     def ButtonPress(self, event):  # mouse button pressed event
         # print( event.xdata, event.ydata)
         if event.button == 1:  # add new point
+            if self.running:
+                return
             if self.px.size < 2:
                 self.openInput()
             if self.px.size < 3:
