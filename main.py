@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import sympy as smp
 from scipy.integrate import odeint
 from celluloid import Camera
+from matplotlib.widgets import TextBox
+from tkinter import *
 
 
 
@@ -21,14 +23,15 @@ class Pendel:
         self.canvas.mpl_connect('motion_notify_event', self.Move)
         self.canvas.mpl_connect('button_release_event', self.Release)
 
-        self.xlim = (0, 16)
-        self.ylim = (0, 12)
+        self.xlim = (-5, 5)
+        self.ylim = (-5, 5)
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
 
         # Pendel Value
         self.points = array([])
-
+        self.mass1 = 0
+        self.mass2 = 0
         # Sympy Stuff
         self.L1 = smp.symbols('L1')
         self.L2 = smp.symbols('L2')
@@ -80,6 +83,20 @@ class Pendel:
         self.dthe2dt_f = smp.lambdify(self.the2_d, self.the2_d)
 
         plt.show()  # draw empty subplot with axes
+    def openInput(self):
+        master = Tk()
+        e = Entry(master)
+        e.pack()
+        e.focus_set()
+
+        def callback():
+            if self.mass1 == 0:
+                self.mass1 = float(e.get())
+            else:
+                self.mass2 = float(e.get())
+
+        b = Button(master, text="OK", width=10, command=callback)
+        b.pack()
 
     def get_x1y1x2y2(self, t, the1, the2, L1, L2):
         return (L1 * sin(the1),
@@ -106,6 +123,7 @@ class Pendel:
             if self.px.size < 3:
                 self.px = r_[self.px, event.xdata]
                 self.py = r_[self.py, event.ydata]
+                self.openInput()
                 if self.px.size == 3:
                     print("3 points selected")
                     if self.running:
@@ -168,11 +186,11 @@ class Pendel:
     def start(self):
 
         # plt.close(self.figure1)
-        t = linspace(0, 80, 2001)
+        t = linspace(0, 80, 1501)
         g = 9.81
-        # TODO WAY TO CHANGE MASS IN PLOT
-        m1 = 1
-        m2 = 1
+        # TODO WAY TO CHANGE MASS IN PLOT !!!!!!!!!
+        m1 = self.mass1
+        m2 = self.mass2
         L1, L2 = self.calcLength()
         # Starting angle
         y0_theta1 = self.calcangle()[0]
