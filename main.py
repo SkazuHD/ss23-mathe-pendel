@@ -200,7 +200,7 @@ class Pendel:
         # Starting angle
         y0_theta1 = self.calcangle()[0]
         y0_theta2 = self.calcangle()[1]
-        
+
 
 
         # Test values
