@@ -122,6 +122,7 @@ class Pendel:
                 self.py[self.nDrag] = event.ydata
         self.Draw(event)
 
+
     def Move(self, event):  # drag point when moving with pressed button
         if self.nDrag != -1:
             self.px[self.nDrag] = event.xdata
@@ -132,7 +133,7 @@ class Pendel:
         self.nDrag = -1  # no dragging
 
     def Draw(self, event):  # re-draw canvas
-        # print('draw')
+
         self.ax.cla()
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
@@ -140,6 +141,7 @@ class Pendel:
         plt.plot(self.px, self.py, '*-b')
 
         event.canvas.draw()
+
         # using plt.show() here will cause stack overflow
 
     def calcLength(self):
@@ -175,6 +177,8 @@ class Pendel:
         # Starting angle
         y0_theta1 = self.calcangle()[0]
         y0_theta2 = self.calcangle()[1]
+        
+
 
         # Test values
         # L1 , L2 = 3,1
