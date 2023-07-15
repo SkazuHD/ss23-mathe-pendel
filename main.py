@@ -95,6 +95,8 @@ class Pendel:
             else:
                 self.mass2 = float(e.get())
 
+            master.destroy()
+
         b = Button(master, text="OK", width=10, command=callback)
         b.pack()
 
@@ -120,10 +122,11 @@ class Pendel:
     def ButtonPress(self, event):  # mouse button pressed event
         # print( event.xdata, event.ydata)
         if event.button == 1:  # add new point
+            if self.px.size < 2:
+                self.openInput()
             if self.px.size < 3:
                 self.px = r_[self.px, event.xdata]
                 self.py = r_[self.py, event.ydata]
-                self.openInput()
                 if self.px.size == 3:
                     print("3 points selected")
                     if self.running:
@@ -191,6 +194,7 @@ class Pendel:
         # TODO WAY TO CHANGE MASS IN PLOT !!!!!!!!!
         m1 = self.mass1
         m2 = self.mass2
+
         L1, L2 = self.calcLength()
         # Starting angle
         y0_theta1 = self.calcangle()[0]
