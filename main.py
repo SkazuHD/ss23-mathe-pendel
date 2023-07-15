@@ -85,6 +85,7 @@ class Pendel:
         plt.show()  # draw empty subplot with axes
     def openInput(self):
         master = Tk()
+        master.after(100, lambda: master.focus_force())
         e = Entry(master)
         e.pack()
         e.focus_set()
