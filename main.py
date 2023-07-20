@@ -9,7 +9,6 @@ from matplotlib.widgets import TextBox
 from tkinter import *
 
 
-
 class Pendel:
     def __init__(self, fig, ax):
         self.ax = ax
@@ -22,6 +21,9 @@ class Pendel:
         self.canvas.mpl_connect('button_press_event', self.ButtonPress)
         self.canvas.mpl_connect('motion_notify_event', self.Move)
         self.canvas.mpl_connect('button_release_event', self.Release)
+        self.energy_text = self.ax.text(0.02, 0.80, 'ENERGY', transform=self.ax.transAxes)
+        self.potenzial_text = self.ax.text(0.02, 0.85, 'Potential Energy(V)', transform=self.ax.transAxes)
+        self.kinetic_text = self.ax.text(0.02, 0.90, 'Kinetic Energy(T)', transform=self.ax.transAxes)
 
         self.xlim = (-5, 5)
         self.ylim = (-5, 5)
@@ -57,13 +59,14 @@ class Pendel:
         # Kinetic
         T1 = 1 / 2 * self.m1 * (smp.diff(self.x1, self.t) ** 2 + smp.diff(self.y1, self.t) ** 2)
         T2 = 1 / 2 * self.m2 * (smp.diff(self.x2, self.t) ** 2 + smp.diff(self.y2, self.t) ** 2)
-        T = T1 + T2
+        self.T = T1 + T2
         # Potential
         V1 = self.m1 * self.g * self.y1
         V2 = self.m2 * self.g * self.y2
-        V = V1 + V2
+        self.V = V1 + V2
+
         # Lagrangian
-        self.L = T - V
+        self.L = self.T - self.V
 
         # First Euler Lagrange Equation
         LE1 = smp.diff(self.L, self.the1) - smp.diff(smp.diff(self.L, self.the1_d), self.t).simplify()
@@ -83,6 +86,7 @@ class Pendel:
         self.dthe2dt_f = smp.lambdify(self.the2_d, self.the2_d)
 
         plt.show()  # draw empty subplot with axes
+
     def openInput(self):
         master = Tk()
         master.after(100, lambda: master.focus_force())
@@ -146,7 +150,6 @@ class Pendel:
                 self.py[self.nDrag] = event.ydata
         self.Draw(event)
 
-
     def Move(self, event):  # drag point when moving with pressed button
         if self.nDrag != -1:
             self.px[self.nDrag] = event.xdata
@@ -189,12 +192,16 @@ class Pendel:
 
         return theta1, theta2
 
+    def calcangleX(self, x1, x2, x3, y1, y2, y3):
+        theta1 = arctan2(y2 - y1, x2 - x1)
+        theta2 = arctan2(y3 - y2, x3 - x2)
+        return theta1, theta2
+
     def start(self):
 
         # plt.close(self.figure1)
-        t = linspace(0, 80, 1501)
+        t = linspace(0, 80, 1001)
         g = 9.81
-        # TODO WAY TO CHANGE MASS IN PLOT !!!!!!!!!
         m1 = self.mass1
         m2 = self.mass2
 
@@ -203,21 +210,13 @@ class Pendel:
         y0_theta1 = self.calcangle()[0]
         y0_theta2 = self.calcangle()[1]
 
-
-
-        # Test values
-        # L1 , L2 = 3,1
-        # y0_theta1, y0_theta2 = 3, 0.5
-
         # TODO HOW TO CALCULATE STARTING VELOCITY
         # Starting velocity
         y0_theta1_v, y0_theta2_v = self.calculate_angular_velocity(L1, L2, m1, m2, y0_theta1, y0_theta2, g)
-
+        #y0_theta1_v, y0_theta2_v = 0,0
         self.ans = odeint(self.dSdt, y0=[y0_theta1, y0_theta1_v, y0_theta2, y0_theta2_v], t=t, args=(g, m1, m2, L1, L2))
         self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
-        # TODO SHOW IN SAME PLOT
-        #fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-        #self.ax.set_facecolor('b')
+
         self.ax.get_xaxis().set_ticks([])  # enable this to hide x axis ticks
         self.ax.get_yaxis().set_ticks([])  # enable this to hide y axis ticks
         plt.ion()
@@ -225,19 +224,50 @@ class Pendel:
         self.ln1, = self.ax.plot([], [], 'ro--', lw=3, markersize=8)
         self.ax.set_ylim(-(L1 + L2), (L1 + L2))
         self.ax.set_xlim(-(L1 + L2), (L1 + L2))
-        self.px = []
-        self.py = []
+        self.energy_text = self.ax.text(0.02, 0.80, 'ENERGY', transform=self.ax.transAxes)
+        self.potenzial_text = self.ax.text(0.02, 0.85, 'Potential Energy(V)', transform=self.ax.transAxes)
+        self.kinetic_text = self.ax.text(0.02, 0.90, 'Kinetic Energy(T)', transform=self.ax.transAxes)
+
+
+        # self.px = []
+        # self.py = []
 
         camera = Camera(self.figure1)
         for i in range(self.x1.size):
             self.animate(i)
+            self.state = self.ans[i]
+            T, V, E = self.energy(L1, L2, m1, m2, g)
+            print(T, V, E, i)
+            self.plotEnergy(i, T, V, E)
+            
             self.figure1.canvas.draw()
             self.figure1.canvas.flush_events()
             camera.snap()
         self.ln1.set_animated(False)
-    # self.ax.ani = animation.FuncAnimation(self.figure1, self.animate, frames=1000, interval=20)
 
-    # plt.show()
+
+    def energy(self, L1, L2, M1, M2, G):
+        x = cumsum([L1 * sin(self.state[0]),
+                       L2 * sin(self.state[2])])
+        y = cumsum([-L1 * cos(self.state[0]),
+                       -L2 * cos(self.state[2])])
+        vx = cumsum([L1 * self.state[1] * cos(self.state[0]),
+                        L2 * self.state[3] * cos(self.state[2])])
+        vy = cumsum([L1 * self.state[1] * sin(self.state[0]),
+                        L2 * self.state[3] * sin(self.state[2])])
+
+        V = G * (M1 * y[0] + M2 * y[1])
+        T = 0.5 * (M1 * dot(vx, vx) + M2 * dot(vy, vy))
+        return T, V, T+V
+    def plotEnergy(self, dt, T, V, E):
+        #self.ax.plot(dt, T)
+        #self.ax.plot(dt, V)
+        #self.ax.plot(dt, E)
+        self.energy_text.set_text('energy = %.3f J' % E)
+        self.potenzial_text.set_text('Potential Energy(V) = %.3f J' % V)
+        self.kinetic_text.set_text('Kinetic Energy(T) = %.3f J' % T)
+
+
 
     def calculate_angular_velocity(self, l1, l2, m1, m2, theta1, theta2, g):
         # TODO VERIFY
