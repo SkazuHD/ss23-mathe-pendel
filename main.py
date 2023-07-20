@@ -199,7 +199,6 @@ class Pendel:
 
     def start(self):
 
-        # plt.close(self.figure1)
         t = linspace(0, 80, 1001)
         g = 9.81
         m1 = self.mass1
@@ -207,13 +206,10 @@ class Pendel:
 
         L1, L2 = self.calcLength()
         # Starting angle
-        y0_theta1 = self.calcangle()[0]
-        y0_theta2 = self.calcangle()[1]
+        y0_theta1 ,  y0_theta2 = self.calcangle()
 
-        # TODO HOW TO CALCULATE STARTING VELOCITY
         # Starting velocity
         y0_theta1_v, y0_theta2_v = self.calculate_angular_velocity(L1, L2, m1, m2, y0_theta1, y0_theta2, g)
-        #y0_theta1_v, y0_theta2_v = 0,0
         self.ans = odeint(self.dSdt, y0=[y0_theta1, y0_theta1_v, y0_theta2, y0_theta2_v], t=t, args=(g, m1, m2, L1, L2))
         self.x1, self.y1, self.x2, self.y2 = self.get_x1y1x2y2(t, self.ans.T[0], self.ans.T[2], L1, L2)
 
