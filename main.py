@@ -1,11 +1,8 @@
-from matplotlib import animation
 from numpy import *
-from numpy import linalg as la
 import matplotlib.pyplot as plt
 import sympy as smp
 from scipy.integrate import odeint
 from celluloid import Camera
-from matplotlib.widgets import TextBox
 from tkinter import *
 
 
@@ -21,9 +18,6 @@ class Pendel:
         self.canvas.mpl_connect('button_press_event', self.ButtonPress)
         self.canvas.mpl_connect('motion_notify_event', self.Move)
         self.canvas.mpl_connect('button_release_event', self.Release)
-        self.energy_text = self.ax.text(0.02, 0.80, 'ENERGY', transform=self.ax.transAxes)
-        self.potenzial_text = self.ax.text(0.02, 0.85, 'Potential Energy(V)', transform=self.ax.transAxes)
-        self.kinetic_text = self.ax.text(0.02, 0.90, 'Kinetic Energy(T)', transform=self.ax.transAxes)
 
         self.xlim = (-5, 5)
         self.ylim = (-5, 5)
@@ -224,10 +218,6 @@ class Pendel:
         self.potenzial_text = self.ax.text(0.02, 0.85, 'Potential Energy(V)', transform=self.ax.transAxes)
         self.kinetic_text = self.ax.text(0.02, 0.90, 'Kinetic Energy(T)', transform=self.ax.transAxes)
 
-
-        # self.px = []
-        # self.py = []
-
         camera = Camera(self.figure1)
         for i in range(self.x1.size):
             self.animate(i)
@@ -256,9 +246,6 @@ class Pendel:
         T = 0.5 * (M1 * dot(vx, vx) + M2 * dot(vy, vy))
         return T, V, T+V
     def plotEnergy(self, dt, T, V, E):
-        #self.ax.plot(dt, T)
-        #self.ax.plot(dt, V)
-        #self.ax.plot(dt, E)
         self.energy_text.set_text('energy = %.3f J' % E)
         self.potenzial_text.set_text('Potential Energy(V) = %.3f J' % V)
         self.kinetic_text.set_text('Kinetic Energy(T) = %.3f J' % T)
@@ -299,7 +286,6 @@ class Pendel:
 
 
 if __name__ == '__main__':
-    print("LAUNCH")
     fig, ax = plt.subplots()
     ax.set_title('Right button to drag')
     pendel = Pendel(fig, ax)
