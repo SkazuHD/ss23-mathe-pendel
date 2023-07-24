@@ -1,9 +1,9 @@
 from numpy import *
 import matplotlib.pyplot as plt
 import sympy as smp
-from scipy.integrate import odeint
 from celluloid import Camera
 from tkinter import *
+from scipy.integrate import odeint
 
 
 class Pendel:
@@ -200,7 +200,7 @@ class Pendel:
 
         L1, L2 = self.calcLength()
         # Starting angle
-        y0_theta1 ,  y0_theta2 = self.calcangle()
+        y0_theta1, y0_theta2 = self.calcangle()
 
         # Starting velocity
         y0_theta1_v, y0_theta2_v = self.calculate_angular_velocity(L1, L2, m1, m2, y0_theta1, y0_theta2, g)
@@ -223,34 +223,38 @@ class Pendel:
             self.animate(i)
             self.state = self.ans[i]
             T, V, E = self.energy(L1, L2, m1, m2, g)
-            print(T, V, E, i)
+            print("TIME STEP: "+ str(i))
+            print("Kinetic Energy(T): "+ str(T))
+            print("Potential Energy(V): "+ str(V))
+            print("Gesamt Energie: "+ str(E))
+            print("State "+ str(self.state))
+            print("-------")
+
             self.plotEnergy(i, T, V, E)
-            
+
             self.figure1.canvas.draw()
             self.figure1.canvas.flush_events()
             camera.snap()
         self.ln1.set_animated(False)
 
-
     def energy(self, L1, L2, M1, M2, G):
         x = cumsum([L1 * sin(self.state[0]),
-                       L2 * sin(self.state[2])])
+                    L2 * sin(self.state[2])])
         y = cumsum([-L1 * cos(self.state[0]),
-                       -L2 * cos(self.state[2])])
+                    -L2 * cos(self.state[2])])
         vx = cumsum([L1 * self.state[1] * cos(self.state[0]),
-                        L2 * self.state[3] * cos(self.state[2])])
+                     L2 * self.state[3] * cos(self.state[2])])
         vy = cumsum([L1 * self.state[1] * sin(self.state[0]),
-                        L2 * self.state[3] * sin(self.state[2])])
+                     L2 * self.state[3] * sin(self.state[2])])
 
         V = G * (M1 * y[0] + M2 * y[1])
         T = 0.5 * (M1 * dot(vx, vx) + M2 * dot(vy, vy))
-        return T, V, T+V
+        return T, V, T + V
+
     def plotEnergy(self, dt, T, V, E):
         self.energy_text.set_text('energy = %.3f J' % E)
         self.potenzial_text.set_text('Potential Energy(V) = %.3f J' % V)
         self.kinetic_text.set_text('Kinetic Energy(T) = %.3f J' % T)
-
-
 
     def calculate_angular_velocity(self, l1, l2, m1, m2, theta1, theta2, g):
         # TODO VERIFY
